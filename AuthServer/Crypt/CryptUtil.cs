@@ -9,7 +9,7 @@ public static class CryptUtil
     /// Scramble the modulus for username/password encryption.
     /// </summary>
     /// <param name="modulus">Modulus.</param>
-    public static void ScrambleModulus(byte[] modulus)
+    public static void ScrambleModulus(Span<byte> modulus)
     {
         for (var i = 0; i < 4; i++)
         {
