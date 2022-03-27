@@ -1,10 +1,17 @@
-﻿namespace Mmo.AuthServer.Crypt;
+﻿using System.Buffers.Binary;
+
+namespace Mmo.AuthServer.Crypt;
 
 /// <summary>
 /// Utilities for encryption.
 /// </summary>
 public static class CryptUtil
 {
+    /// <summary>
+    /// Block size for some functions in this module.
+    /// </summary>
+    public static readonly int BlockSize = 4;
+
     /// <summary>
     /// Scramble the modulus for username/password encryption.
     /// </summary>
@@ -30,5 +37,26 @@ public static class CryptUtil
         {
             modulus[i + 64] = (byte)(modulus[i + 64] ^ modulus[i]);
         }
+    }
+
+    /// <summary>
+    /// Scramble the initial packet from the server.
+    /// </summary>
+    /// <param name="buffer">Buffer with the packet.</param>
+    /// <param name="key">Encryption key.</param>
+    public static void ScrambleInit(Span<byte> buffer, uint key)
+    {
+        // Encryption
+        var rounds = (buffer.Length / BlockSize) - 1;
+        for (var i = 1; i < rounds; i++)
+        {
+            var block = BinaryPrimitives.ReadUInt32LittleEndian(buffer[(i * BlockSize) ..]);
+            key += block;
+            block ^= key;
+            BinaryPrimitives.WriteUInt32LittleEndian(buffer[(i * BlockSize) ..], block);
+        }
+
+        // Write the key
+        BinaryPrimitives.WriteUInt32LittleEndian(buffer[(rounds * BlockSize) ..], key);
     }
 }

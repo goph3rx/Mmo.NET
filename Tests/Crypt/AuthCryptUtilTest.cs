@@ -32,5 +32,18 @@ public class AuthCryptUtilTest
             Convert.ToHexString(modulus)
         );
     }
-}
 
+    [TestMethod]
+    public void ScrambleInit()
+    {
+        // Given
+        var buffer = Convert.FromHexString("010203040506070800000000");
+        var key = 0xDEADBEEF;
+
+        // When
+        CryptUtil.ScrambleInit(buffer, key);
+
+        // Then
+        Assert.AreEqual("01020304F1C2B3EEF4C4B4E6", Convert.ToHexString(buffer));
+    }
+}
