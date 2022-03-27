@@ -13,9 +13,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'AuthServer' " />
   <ItemGroup>
-    <ProjectReference Include="..\Common\Common.csproj">
-      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
-    </ProjectReference>
+    <ProjectReference Include="..\Common\Common.csproj"/>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Network\" />
