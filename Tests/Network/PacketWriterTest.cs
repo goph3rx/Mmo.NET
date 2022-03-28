@@ -58,6 +58,20 @@ public class PacketWriterTest
     }
 
     [TestMethod]
+    public void WriteH()
+    {
+        // Given
+        var memory = new byte[16];
+        var writer = new PacketWriter(memory);
+
+        // When
+        writer.WriteH(0x107B);
+
+        // Then
+        Assert.AreEqual("7B10", Convert.ToHexString(writer.AsSpan()));
+    }
+
+    [TestMethod]
     [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void WriteDOverflow()
     {

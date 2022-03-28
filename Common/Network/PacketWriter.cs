@@ -55,6 +55,16 @@ public ref struct PacketWriter
     }
 
     /// <summary>
+    /// Write a H value (2 bytes).
+    /// </summary>
+    /// <param name="value">Value to write.</param>
+    public void WriteH(short value)
+    {
+        BinaryPrimitives.WriteInt16LittleEndian(this.memory[this.Length..], value);
+        this.Length += 2;
+    }
+
+    /// <summary>
     /// Write a D value (4 bytes).
     /// </summary>
     /// <param name="value">Value to write.</param>
@@ -78,7 +88,7 @@ public ref struct PacketWriter
     /// Get the written data as a span.
     /// </summary>
     /// <returns>Written data as a span.</returns>
-    public readonly ReadOnlySpan<byte> AsSpan()
+    public readonly Span<byte> AsSpan()
     {
         return this.memory[..this.Length];
     }
