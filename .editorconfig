@@ -8,3 +8,6 @@ dotnet_diagnostic.SA1633.severity = none
 
 # SA1011: Closing square brackets should be spaced correctly
 dotnet_diagnostic.SA1011.severity = none
+
+# S4426: Cryptographic keys should be robust
+dotnet_diagnostic.S4426.severity = none
