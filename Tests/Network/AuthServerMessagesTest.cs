@@ -7,7 +7,7 @@ namespace Mmo.Tests.Network;
 [TestClass]
 public class AuthServerMessagesTest
 {
-    private byte[] _memory = new byte[1024];
+    private byte[] memory = new byte[1024];
 
     [TestMethod]
     public void Init()
@@ -18,7 +18,7 @@ public class AuthServerMessagesTest
             Modulus: Convert.FromHexString("9A277669023723947D0EBDCCEF967A24C715018DF6CE66414FCCD0F5BAB54124B8CAAC6D7F52F8BBBAB7DE926B4F0AC4CC84793196E44928774A57737D0E4EE02962952257506E898846E353FA5FEE31409A1D32124FB8DF53D969DD7AA222866FA85E106F8A07E333D8DED4B10A8300B32D5F47CC5EAB14033FA2BC0950B5C9"),
             CryptKey: Convert.FromHexString("060708090A")
         );
-        var writer = new PacketWriter(_memory);
+        var writer = new PacketWriter(this.memory);
 
         // When
         message.WriteTo(ref writer);
