@@ -7,9 +7,6 @@ namespace Mmo.Common.Network;
 /// </summary>
 public ref struct PacketWriter
 {
-    /// <summary>
-    /// Memory that we're writing to.
-    /// </summary>
     private readonly Span<byte> memory;
 
     /// <summary>
