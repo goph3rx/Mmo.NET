@@ -35,4 +35,16 @@ public class Cipher
             this.encrypt.ProcessBlock(buffer[offset..], buffer[offset..]);
         }
     }
+
+    /// <summary>
+    /// Decrypt the buffer in place.
+    /// </summary>
+    /// <param name="buffer">Buffer with data (must be padded).</param>
+    public void Decrypt(Span<byte> buffer)
+    {
+        for (var offset = 0; offset < buffer.Length; offset += BlockSize)
+        {
+            this.decrypt.ProcessBlock(buffer[offset..], buffer[offset..]);
+        }
+    }
 }
