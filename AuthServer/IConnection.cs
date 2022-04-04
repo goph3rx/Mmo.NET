@@ -19,4 +19,11 @@ public interface IConnection
     /// <param name="message">Message.</param>
     /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     Task SendAsync(IServerMessage message);
+
+    /// <summary>
+    /// Receive a message.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">When receive is attempted on a closed connection.</exception>
+    Task<object> ReceiveAsync();
 }
