@@ -1,4 +1,5 @@
-﻿using System.IO.Pipelines;
+﻿using System.Buffers;
+using System.IO.Pipelines;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mmo.AuthServer;
@@ -13,7 +14,7 @@ public class AuthConnectionTest
 {
     class FakeServerMessage : ICryptKey, IServerMessage
     {
-        public byte[] CryptKey => Array.Empty<byte>();
+        public byte[] CryptKey => new byte[4];
 
         public void WriteTo(ref PacketWriter writer)
         {
@@ -24,55 +25,25 @@ public class AuthConnectionTest
         }
     }
 
-    class FakePipeWriter : PipeWriter
-    {
-        public byte[] Buffer = new byte[Connection.BufferSize];
-        public int Advanced;
-        public bool Flushed;
-
-        public override void Advance(int bytes)
-        {
-            Advanced = bytes;
-        }
-
-        public override void CancelPendingFlush()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void Complete(Exception? exception = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ValueTask<FlushResult> FlushAsync(CancellationToken cancellationToken = default)
-        {
-            Flushed = true;
-            return new ValueTask<FlushResult>();
-        }
-
-        public override Memory<byte> GetMemory(int sizeHint = 0)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override Span<byte> GetSpan(int sizeHint = 0)
-        {
-            return Buffer;
-        }
-    }
-
-    private FakePipeWriter output;
     private EndPoint endPoint;
+    private PipeReader reader;
+    private PipeWriter writer;
     private Connection connection;
 
     public AuthConnectionTest()
     {
-        this.output = new FakePipeWriter();
-        var pipe = new Mock<IDuplexPipe>();
-        pipe.Setup(x => x.Output).Returns(this.output);
-        this.endPoint = new IPEndPoint(0x7F000001, 8123);
-        this.connection = new Connection(pipe.Object, this.endPoint, 0xD5906CBC);
+        {
+            var pipe = new Pipe();
+            this.reader = pipe.Reader;
+            this.writer = pipe.Writer;
+        }
+        {
+            var pipe = new Mock<IDuplexPipe>();
+            pipe.Setup(x => x.Input).Returns(this.reader);
+            pipe.Setup(x => x.Output).Returns(this.writer);
+            this.endPoint = new IPEndPoint(0x7F000001, 8123);
+            this.connection = new Connection(pipe.Object, this.endPoint, 0xD5906CBC);
+        }
     }
 
     [TestMethod]
@@ -92,11 +63,83 @@ public class AuthConnectionTest
         await connection.SendAsync(message);
 
         // Then
-        Assert.AreEqual(26, this.output.Advanced);
-        Assert.IsTrue(this.output.Flushed);
+        var result = await this.reader.ReadAtLeastAsync(26);
+        var buffer = new byte[26];
+        result.Buffer.CopyTo(buffer);
         Assert.AreEqual(
             "1A009BB6D905778ECB0ECF113FD58BFB83A5E8D00DA1A97F42CD",
-            Convert.ToHexString(this.output.Buffer[..this.output.Advanced])
+            Convert.ToHexString(buffer)
         );
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public async Task ReceiveAsyncHeaderClosed()
+    {
+        // Given
+        this.writer.Complete();
+
+        // When/Then
+        await connection.ReceiveAsync();
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public async Task ReceiveAsyncHeaderTooSmall()
+    {
+        // Given
+        await this.writer.WriteAsync(new byte[] { 0, 0 });
+
+        // When/Then
+        await connection.ReceiveAsync();
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(InvalidOperationException))]
+    public async Task ReceiveAsyncHeaderTooBig()
+    {
+        // Given
+        await this.writer.WriteAsync(new byte[] { 10, 40 });
+
+        // When/Then
+        await connection.ReceiveAsync();
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public async Task ReceiveAsyncBodyClosed()
+    {
+        // Given
+        await this.writer.WriteAsync(new byte[] { 10, 0 });
+        this.writer.Complete();
+
+        // When/Then
+        await connection.ReceiveAsync();
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentException))]
+    public async Task ReceiveAsyncInvalidId()
+    {
+        // Given
+        await this.writer.WriteAsync(new byte[] { 18, 0 });
+        await this.writer.WriteAsync(Convert.FromHexString("34E45180CE5A3F7946D6A19B80854746"));
+
+        // When/Then
+        await connection.ReceiveAsync();
+    }
+
+    [TestMethod]
+    public async Task ReceiveAsync()
+    {
+        // Given
+        await this.writer.WriteAsync(new byte[] { 18, 0 });
+        await this.writer.WriteAsync(Convert.FromHexString("5B452FDDFE94EFCF46D6A19B80854746"));
+
+        // When
+        var message = await connection.ReceiveAsync();
+
+        // Then
+        Assert.IsInstanceOfType(message, typeof(ClientAuthGameGuard));
     }
 }

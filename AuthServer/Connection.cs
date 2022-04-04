@@ -1,4 +1,5 @@
-﻿using System.IO.Pipelines;
+﻿using System.Buffers;
+using System.IO.Pipelines;
 using System.Net;
 using System.Security.Cryptography;
 using Mmo.AuthServer.Crypt;
@@ -23,8 +24,8 @@ public class Connection : IConnection
     private static readonly int HeaderSize = 2;
 
     private readonly uint scrambleKey;
-    private readonly Cipher cipher;
     private readonly IDuplexPipe pipe;
+    private Cipher cipher;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Connection"/> class.
@@ -50,6 +51,24 @@ public class Connection : IConnection
         await this.pipe.Output.FlushAsync();
     }
 
+    /// <inheritdoc/>
+    public async Task<object> ReceiveAsync()
+    {
+        // Read header
+        var result = await this.pipe.Input.ReadAtLeastAsync(HeaderSize);
+        var bodyLength = this.ReadHeader(result.Buffer) - HeaderSize;
+        this.pipe.Input.AdvanceTo(result.Buffer.GetPosition(HeaderSize));
+
+        // Read body
+        if (bodyLength > BufferSize)
+        {
+            throw new InvalidOperationException("Body too long");
+        }
+
+        result = await this.pipe.Input.ReadAtLeastAsync(bodyLength);
+        return this.ReadBody(result.Buffer, bodyLength);
+    }
+
     private void Write(IServerMessage message)
     {
         var buffer = this.pipe.Output.GetSpan(BufferSize);
@@ -67,6 +86,13 @@ public class Connection : IConnection
 
     private int WriteBody(IServerMessage message, Span<byte> body)
     {
+        // Check if message changes encryption key
+        byte[]? cryptKey = null;
+        if (message is ICryptKey crypt)
+        {
+            cryptKey = crypt.CryptKey;
+        }
+
         var writer = new PacketWriter(body);
         message.WriteTo(ref writer);
 
@@ -81,7 +107,7 @@ public class Connection : IConnection
         writer.Skip(CryptUtil.BlockSize);
 
         // Additional encryption
-        if (message is ICryptKey)
+        if (cryptKey != null)
         {
             writer.Skip(CryptUtil.BlockSize);
             CryptUtil.ScrambleInit(writer.AsSpan(), this.scrambleKey);
@@ -96,6 +122,12 @@ public class Connection : IConnection
 
         this.cipher.Encrypt(writer.AsSpan());
 
+        // Change encryption key
+        if (cryptKey != null)
+        {
+            this.cipher = new Cipher(cryptKey);
+        }
+
         return writer.Length;
     }
 
@@ -103,5 +135,33 @@ public class Connection : IConnection
     {
         var writer = new PacketWriter(header);
         writer.WriteH((short)(bodyLength + HeaderSize));
+    }
+
+    private int ReadHeader(ReadOnlySequence<byte> buffer)
+    {
+        Span<byte> header = stackalloc byte[HeaderSize];
+        buffer.Slice(0, header.Length).CopyTo(header);
+        var reader = new PacketReader(header);
+        return reader.ReadH();
+    }
+
+    private object ReadBody(ReadOnlySequence<byte> read, int bodyLength)
+    {
+        var buffer = ArrayPool<byte>.Shared.Rent(bodyLength);
+        var body = buffer.AsSpan()[..bodyLength];
+        try
+        {
+            // Decrypt the packet
+            read.Slice(0, bodyLength).CopyTo(body);
+            this.cipher.Decrypt(body);
+
+            // Read the message
+            var reader = new PacketReader(body);
+            return ClientMessages.Read(reader);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
     }
 }
