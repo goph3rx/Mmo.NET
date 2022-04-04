@@ -15,7 +15,7 @@ public class AuthClientMessagesTest
         var reader = new PacketReader(buffer);
 
         // When
-        var result = ClientMessages.Read(reader);
+        var result = ClientMessages.ReadFrom(reader);
 
         // Then
         if (result is ClientAuthGameGuard)

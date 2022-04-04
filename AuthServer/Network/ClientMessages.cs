@@ -12,7 +12,7 @@ public static class ClientMessages
     /// </summary>
     /// <param name="reader">Reader with the packet.</param>
     /// <returns>Message.</returns>
-    public static object Read(PacketReader reader)
+    public static object ReadFrom(PacketReader reader)
     {
         var id = reader.ReadC();
         return id switch
