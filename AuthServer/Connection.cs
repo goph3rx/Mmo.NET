@@ -97,20 +97,20 @@ public class Connection : IConnection
         message.WriteTo(ref writer);
 
         // Padding
-        var pad = writer.Length % CryptUtil.BlockSize;
+        var pad = writer.Length % CryptHelper.BlockSize;
         if (pad != 0)
         {
-            writer.Skip(CryptUtil.BlockSize - pad);
+            writer.Skip(CryptHelper.BlockSize - pad);
         }
 
         // Checksum
-        writer.Skip(CryptUtil.BlockSize);
+        writer.Skip(CryptHelper.BlockSize);
 
         // Additional encryption
         if (cryptKey != null)
         {
-            writer.Skip(CryptUtil.BlockSize);
-            CryptUtil.ScrambleInit(writer.AsSpan(), this.scrambleKey);
+            writer.Skip(CryptHelper.BlockSize);
+            CryptHelper.ScrambleInit(writer.AsSpan(), this.scrambleKey);
         }
 
         // Encryption

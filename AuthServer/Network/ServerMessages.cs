@@ -45,7 +45,7 @@ public record ServerInit(int SessionId, byte[] Modulus, byte[] CryptKey) : ICryp
     /// <inheritdoc/>
     public void WriteTo(ref PacketWriter writer)
     {
-        CryptUtil.ScrambleModulus(this.Modulus);
+        CryptHelper.ScrambleModulus(this.Modulus);
 
         writer.WriteC(0x00);
         writer.WriteD(this.SessionId);
