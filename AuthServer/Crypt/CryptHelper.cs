@@ -3,9 +3,9 @@
 namespace Mmo.AuthServer.Crypt;
 
 /// <summary>
-/// Utilities for encryption.
+/// Helpers for encryption.
 /// </summary>
-public static class CryptUtil
+public static class CryptHelper
 {
     /// <summary>
     /// Block size for some functions in this module.
