@@ -157,7 +157,7 @@ public class Connection : IConnection
 
             // Read the message
             var reader = new PacketReader(body);
-            return ClientMessages.Read(reader);
+            return ClientMessages.ReadFrom(reader);
         }
         finally
         {
