@@ -69,7 +69,9 @@ public class Connection : IConnection
         }
 
         result = await this.pipe.Input.ReadAtLeastAsync(bodyLength);
-        return this.ReadBody(result.Buffer, bodyLength);
+        var message = this.ReadBody(result.Buffer, bodyLength);
+        this.pipe.Input.AdvanceTo(result.Buffer.GetPosition(bodyLength));
+        return message;
     }
 
     private void Write(IServerMessage message)
@@ -136,16 +138,14 @@ public class Connection : IConnection
 
     private void WriteHeader(int bodyLength, Span<byte> header)
     {
-        var writer = new PacketWriter(header);
-        writer.WriteH((short)(bodyLength + HeaderSize));
+        BinaryPrimitives.WriteInt16LittleEndian(header, (short)(bodyLength + HeaderSize));
     }
 
     private int ReadHeader(ReadOnlySequence<byte> buffer)
     {
         Span<byte> header = stackalloc byte[HeaderSize];
         buffer.Slice(0, header.Length).CopyTo(header);
-        var reader = new PacketReader(header);
-        return reader.ReadH();
+        return BinaryPrimitives.ReadInt16LittleEndian(header);
     }
 
     private object ReadBody(ReadOnlySequence<byte> read, int bodyLength)
