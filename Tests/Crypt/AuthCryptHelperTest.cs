@@ -46,4 +46,18 @@ public class AuthCryptHelperTest
         // Then
         Assert.AreEqual("01020304F1C2B3EEF4C4B4E6", Convert.ToHexString(buffer));
     }
+
+
+    [TestMethod]
+    public void CalculateChecksum()
+    {
+        // Given
+        var buffer = Convert.FromHexString("0102030405060708");
+
+        // When
+        var checksum = CryptHelper.CalculateChecksum(buffer);
+
+        // Then
+        Assert.AreEqual(0xC040404, checksum);
+    }
 }

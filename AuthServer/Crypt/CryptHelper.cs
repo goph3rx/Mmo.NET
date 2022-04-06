@@ -59,4 +59,21 @@ public static class CryptHelper
         // Write the key
         BinaryPrimitives.WriteUInt32LittleEndian(buffer[(rounds * BlockSize) ..], key);
     }
+
+    /// <summary>
+    /// Calculate the checksum of the buffer.
+    /// </summary>
+    /// <param name="buffer">Buffer.</param>
+    /// <returns>Resulting checksum.</returns>
+    public static int CalculateChecksum(ReadOnlySpan<byte> buffer)
+    {
+        var checksum = 0;
+        for (var offset = 0; offset < buffer.Length; offset += BlockSize)
+        {
+            var block = BinaryPrimitives.ReadInt32LittleEndian(buffer[offset..]);
+            checksum ^= block;
+        }
+
+        return checksum;
+    }
 }
