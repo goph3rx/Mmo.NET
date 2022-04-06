@@ -30,5 +30,23 @@ public class AuthServerMessagesTest
         );
     }
 
+    [TestMethod]
+    public void GgAuth()
+    {
+        // Given
+        var message = new ServerGgAuth(
+            Result: GgAuthResult.Skip
+        );
+        var writer = new PacketWriter(this.memory);
+
+        // When
+        message.WriteTo(ref writer);
+
+        // Then
+        Assert.AreEqual(
+            "0B0B00000000000000000000000000000000000000",
+            Convert.ToHexString(writer.AsSpan())
+        );
+    }
 }
 
