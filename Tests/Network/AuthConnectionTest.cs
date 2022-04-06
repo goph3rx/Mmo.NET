@@ -73,7 +73,7 @@ public class AuthConnectionTest
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    [ExpectedException(typeof(ConnectionClosedException))]
     public async Task ReceiveAsyncHeaderClosed()
     {
         // Given
@@ -106,7 +106,7 @@ public class AuthConnectionTest
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    [ExpectedException(typeof(ConnectionClosedException))]
     public async Task ReceiveAsyncBodyClosed()
     {
         // Given
