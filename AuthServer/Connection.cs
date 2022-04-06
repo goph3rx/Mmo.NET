@@ -59,6 +59,11 @@ public class Connection : IConnection
     {
         // Read header
         var result = await this.pipe.Input.ReadAtLeastAsync(HeaderSize);
+        if (result.IsCompleted)
+        {
+            throw new ConnectionClosedException();
+        }
+
         var bodyLength = this.ReadHeader(result.Buffer) - HeaderSize;
         this.pipe.Input.AdvanceTo(result.Buffer.GetPosition(HeaderSize));
 
@@ -69,6 +74,11 @@ public class Connection : IConnection
         }
 
         result = await this.pipe.Input.ReadAtLeastAsync(bodyLength);
+        if (result.IsCompleted)
+        {
+            throw new ConnectionClosedException();
+        }
+
         var message = this.ReadBody(result.Buffer, bodyLength);
         this.pipe.Input.AdvanceTo(result.Buffer.GetPosition(bodyLength));
         return message;

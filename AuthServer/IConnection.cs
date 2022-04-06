@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Runtime.Serialization;
 using Mmo.AuthServer.Network;
 
 namespace Mmo.AuthServer;
@@ -24,6 +25,13 @@ public interface IConnection
     /// Receive a message.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">When receive is attempted on a closed connection.</exception>
+    /// <exception cref="ConnectionClosedException">When receive is attempted on a closed connection.</exception>
     Task<object> ReceiveAsync();
+}
+
+/// <summary>
+/// Exception thrown when the connection was closed.
+/// </summary>
+public class ConnectionClosedException : Exception
+{
 }
