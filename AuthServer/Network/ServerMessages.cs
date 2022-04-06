@@ -56,5 +56,31 @@ public record ServerInit(int SessionId, byte[] Modulus, byte[] CryptKey) : ICryp
     }
 }
 
+/// <summary>
+/// Result of GG auth.
+/// </summary>
+public enum GgAuthResult
+{
+    /// <summary>
+    /// Auth was skipped.
+    /// </summary>
+    Skip = 0x0b,
+}
+
+/// <summary>
+/// Message to complete the GG auth.
+/// </summary>
+/// <param name="Result">Result of GG auth.</param>
+public record ServerGgAuth(GgAuthResult Result) : IServerMessage
+{
+    /// <inheritdoc/>
+    public void WriteTo(ref PacketWriter writer)
+    {
+        writer.WriteC(0x0b);
+        writer.WriteD((int)this.Result);
+        writer.Skip(16);
+    }
+}
+
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
 #pragma warning restore SA1009 // Closing parenthesis should be spaced correctly
