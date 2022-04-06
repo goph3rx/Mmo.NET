@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Buffers.Binary;
 using System.IO.Pipelines;
 using System.Net;
 using System.Security.Cryptography;
@@ -22,6 +23,8 @@ public class Connection : IConnection
     /// Size of the packet header.
     /// </summary>
     private static readonly int HeaderSize = 2;
+
+    private static readonly byte[] EmptyBlock = new byte[] { 0, 0, 0, 0 };
 
     private readonly uint scrambleKey;
     private readonly IDuplexPipe pipe;
@@ -154,6 +157,20 @@ public class Connection : IConnection
             // Decrypt the packet
             read.Slice(0, bodyLength).CopyTo(body);
             this.cipher.Decrypt(body);
+
+            // Remove padding
+            while (body.EndsWith(EmptyBlock))
+            {
+                body = body[..^EmptyBlock.Length];
+            }
+
+            // Checksum
+            var expected = CryptHelper.CalculateChecksum(body[..^CryptHelper.BlockSize]);
+            var actual = BinaryPrimitives.ReadInt32LittleEndian(body[^CryptHelper.BlockSize..]);
+            if (expected != actual)
+            {
+                throw new InvalidDataException();
+            }
 
             // Read the message
             var reader = new PacketReader(body);

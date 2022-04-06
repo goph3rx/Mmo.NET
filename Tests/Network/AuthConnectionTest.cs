@@ -142,4 +142,29 @@ public class AuthConnectionTest
         // Then
         Assert.IsInstanceOfType(message, typeof(ClientAuthGameGuard));
     }
+
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public async Task ReceiveShortAsync()
+    {
+        // Given
+        await this.writer.WriteAsync(new byte[] { 18, 0 });
+        await this.writer.WriteAsync(Convert.FromHexString("46D6A19B8085474646D6A19B80854746"));
+
+        // When/Then
+        await connection.ReceiveAsync();
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(InvalidDataException))]
+    public async Task ReceiveAsyncInvalidChecksum()
+    {
+        // Given
+        await this.writer.WriteAsync(new byte[] { 18, 0 });
+        await this.writer.WriteAsync(Convert.FromHexString("34E45180CE5A3F7946D6A19B80834746"));
+
+        // When/Then
+        await connection.ReceiveAsync();
+    }
 }
