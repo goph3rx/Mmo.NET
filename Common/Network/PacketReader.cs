@@ -8,7 +8,7 @@ namespace Mmo.Common.Network;
 /// </summary>
 public ref struct PacketReader
 {
-    private ReadOnlySpan<byte> memory;
+    private readonly ReadOnlySpan<byte> memory;
     private int offset = 0;
 
     /// <summary>
@@ -35,11 +35,23 @@ public ref struct PacketReader
     /// Read a H value (2 bytes).
     /// </summary>
     /// <returns>Read value.</returns>
-    /// <exception cref="InvalidOperationException">When buffer end was reached.</exception>
     public short ReadH()
     {
         var value = BinaryPrimitives.ReadInt16LittleEndian(this.memory[this.offset..]);
         this.offset += 2;
+        return value;
+    }
+
+    /// <summary>
+    /// Read a B value.
+    /// </summary>
+    /// <param name="length">Length of the value.</param>
+    /// <returns>Read value.</returns>
+    public byte[] ReadB(int length)
+    {
+        var value = new byte[length];
+        this.memory[this.offset .. (this.offset + length)].CopyTo(value);
+        this.offset += length;
         return value;
     }
 }

@@ -17,9 +17,15 @@ public static class ClientMessages
         var id = reader.ReadC();
         return id switch
         {
+            0x00 => ReadClientRequestAuthLogin(reader),
             0x07 => new ClientAuthGameGuard(),
             _ => throw new ArgumentException($"Invalid packet id (0x{id:X2})", nameof(reader)),
         };
+    }
+
+    private static ClientRequestAuthLogin ReadClientRequestAuthLogin(PacketReader reader)
+    {
+        return new ClientRequestAuthLogin(reader.ReadB(128));
     }
 }
 
@@ -30,6 +36,12 @@ public static class ClientMessages
 /// Request to start GG auth.
 /// </summary>
 public record ClientAuthGameGuard() { }
+
+/// <summary>
+/// Request for normal auth (username/password).
+/// </summary>
+/// <param name="Credentials">Encrypted username and password.</param>
+public record ClientRequestAuthLogin(byte[] Credentials) { }
 
 
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
