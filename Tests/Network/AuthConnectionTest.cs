@@ -60,7 +60,7 @@ public class AuthConnectionTest
         var message = new FakeServerMessage();
 
         // When
-        await connection.SendAsync(message);
+        await this.connection.SendAsync(message);
 
         // Then
         var result = await this.reader.ReadAtLeastAsync(26);
@@ -68,6 +68,25 @@ public class AuthConnectionTest
         result.Buffer.CopyTo(buffer);
         Assert.AreEqual(
             "1A009BB6D905778ECB0ECF113FD58BFB83A5E8D00DA1A97F42CD",
+            Convert.ToHexString(buffer)
+        );
+    }
+
+    [TestMethod]
+    public async Task SendChecksumAsync()
+    {
+        // Given
+        var message = new ServerGgAuth(GgAuthResult.Skip);
+
+        // When
+        await this.connection.SendAsync(message);
+
+        // Then
+        var result = await this.reader.ReadAtLeastAsync(34);
+        var buffer = new byte[34];
+        result.Buffer.CopyTo(buffer);
+        Assert.AreEqual(
+            "220079E07E63D859C9B346D6A19B8085474646D6A19B8085474679E07E63D859C9B3",
             Convert.ToHexString(buffer)
         );
     }
