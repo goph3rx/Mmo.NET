@@ -119,7 +119,15 @@ public class Connection : IConnection
         }
 
         // Checksum
-        writer.Skip(CryptHelper.BlockSize);
+        if (cryptKey != null)
+        {
+            writer.Skip(CryptHelper.BlockSize);
+        }
+        else
+        {
+            var checksum = CryptHelper.CalculateChecksum(writer.AsSpan());
+            writer.WriteD(checksum);
+        }
 
         // Additional encryption
         if (cryptKey != null)
