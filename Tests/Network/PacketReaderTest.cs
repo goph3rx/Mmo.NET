@@ -57,4 +57,18 @@ public class PacketReaderTest
         // Then
         Assert.AreEqual(0x107B, value);
     }
+
+    [TestMethod]
+    public void ReadB()
+    {
+        // Given
+        var memory = Convert.FromHexString("010203");
+        var writer = new PacketReader(memory);
+
+        // When
+        var value = writer.ReadB(3);
+
+        // Then
+        CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, value);
+    }
 }
