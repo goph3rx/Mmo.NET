@@ -25,12 +25,32 @@ public class AuthClientTest
     {
         // Given
         this.connection.
-            Setup(x => x.SendAsync(It.Is<ServerInit>(message => message.Modulus.Length == 128 && message.CryptKey.Length == 16))).
+            Setup(x => x.SendAsync(It.Is<ServerInit>(m => m.Modulus.Length == 128 && m.CryptKey.Length == 16))).
             Returns(Task.CompletedTask).
             Verifiable();
 
         // When
         await this.client.InitAsync();
+
+        // Then
+        this.connection.Verify();
+    }
+
+    [TestMethod]
+    public async Task HandleAuthGameGuardAsync()
+    {
+        // Given
+        this.connection.
+            SetupSequence(x => x.ReceiveAsync()).
+            ReturnsAsync(new ClientAuthGameGuard()).
+            Throws(new ConnectionClosedException());
+        this.connection.
+            Setup(x => x.SendAsync(It.Is<ServerGgAuth>(m => m.Result == GgAuthResult.Skip))).
+            Returns(Task.CompletedTask).
+            Verifiable();
+
+        // When
+        await this.client.RunAsync();
 
         // Then
         this.connection.Verify();
