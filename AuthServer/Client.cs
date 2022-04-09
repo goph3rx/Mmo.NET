@@ -50,15 +50,47 @@ public class Client
     /// Process the commands from the client.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public Task RunAsync()
+    public async Task RunAsync()
     {
-        // Will contain a receive loop
-        return Task.Delay(10000);
+        while (true)
+        {
+            try
+            {
+                var message = await this.ReceiveAsync();
+                await this.HandleAsync(message);
+            }
+            catch (ConnectionClosedException)
+            {
+                this.logger.LogInformation("End connection from {}", this.connection.RemoteEndPoint);
+                break;
+            }
+        }
+    }
+
+    private Task HandleAsync(object message)
+    {
+        return message switch
+        {
+            ClientAuthGameGuard => this.HandleAuthGameGuardAsync(),
+            _ => throw new ArgumentException("Message type not supported", nameof(message)),
+        };
+    }
+
+    private Task HandleAuthGameGuardAsync()
+    {
+        return this.SendAsync(new ServerGgAuth(Result: GgAuthResult.Skip));
     }
 
     private Task SendAsync(IServerMessage message)
     {
         this.logger.LogDebug("Sending {}", message);
         return this.connection.SendAsync(message);
+    }
+
+    private async Task<object> ReceiveAsync()
+    {
+        var message = await this.connection.ReceiveAsync();
+        this.logger.LogDebug("Received {}", message);
+        return message;
     }
 }
