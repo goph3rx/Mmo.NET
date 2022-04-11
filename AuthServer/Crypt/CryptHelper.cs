@@ -1,4 +1,6 @@
 ﻿using System.Buffers.Binary;
+using System.Numerics;
+using System.Security.Cryptography;
 
 namespace Mmo.AuthServer.Crypt;
 
@@ -75,5 +77,76 @@ public static class CryptHelper
         }
 
         return checksum;
+    }
+
+    /// <summary>
+    /// Decrypt the credential blob received from the client.
+    /// </summary>
+    /// <param name="credentials">Credentials blob.</param>
+    /// <param name="key">Credential key.</param>
+    /// <returns>Decrypted credentials.</returns>
+    /// <remarks>Decrypting manually here as RSA without padding isn't supported by cryptography library.</remarks>
+    public static byte[] DecryptCredentials(byte[] credentials, RSA key)
+    {
+        // Extract parameters
+        var parameters = key.ExportParameters(includePrivateParameters: true);
+        var c = new BigInteger(
+            credentials,
+            isUnsigned: true,
+            isBigEndian: true);
+        var n = new BigInteger(
+            parameters.Modulus,
+            isUnsigned: true,
+            isBigEndian: true);
+        var d = new BigInteger(
+            parameters.D,
+            isUnsigned: true,
+            isBigEndian: true);
+
+        // Calculate
+        BigInteger result;
+        if (parameters.DP == null)
+        {
+            // See https://en.wikipedia.org/wiki/RSA_(cryptosystem)#Decryption
+            result = BigInteger.ModPow(c, d, n);
+        }
+        else
+        {
+            // See https://en.wikipedia.org/wiki/RSA_(cryptosystem)#Using_the_Chinese_remainder_algorithm
+            var dp = new BigInteger(
+                parameters.DP,
+                isUnsigned: true,
+                isBigEndian: true);
+            var dq = new BigInteger(
+                parameters.DQ,
+                isUnsigned: true,
+                isBigEndian: true);
+            var qinv = new BigInteger(
+                parameters.InverseQ,
+                isUnsigned: true,
+                isBigEndian: true);
+            var p = new BigInteger(
+                parameters.P,
+                isUnsigned: true,
+                isBigEndian: true);
+            var q = new BigInteger(
+                parameters.Q,
+                isUnsigned: true,
+                isBigEndian: true);
+            var m1 = BigInteger.ModPow(c, dp, p);
+            var m2 = BigInteger.ModPow(c, dq, q);
+            var h = (qinv * (m1 - m2)) % p;
+            result = m2 + ((h * q) % (p * q));
+        }
+
+        // Export
+        var length = result.GetByteCount(isUnsigned: true);
+        var buffer = new byte[128];
+        if (!result.TryWriteBytes(buffer.AsSpan()[^length..], out _, isUnsigned: true, isBigEndian: true))
+        {
+            throw new InvalidOperationException("Cannot export result");
+        }
+
+        return buffer;
     }
 }
