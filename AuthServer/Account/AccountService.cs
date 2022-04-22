@@ -20,7 +20,7 @@ public class AccountService : IAccountService
     }
 
     /// <inheritdoc/>
-    public Task Create(string username, string password)
+    public Task CreateAsync(string username, string password)
     {
         // Combine password and salt for hashing
         var salt = RandomNumberGenerator.GetBytes(16);
@@ -35,6 +35,6 @@ public class AccountService : IAccountService
         var hash = sha256.ComputeHash(plain);
 
         // Create the record
-        return this.repository.Create(username, salt, hash);
+        return this.repository.CreateAsync(username, salt, hash);
     }
 }

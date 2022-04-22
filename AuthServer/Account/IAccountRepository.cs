@@ -12,14 +12,14 @@ public interface IAccountRepository
     /// <param name="salt">Salt.</param>
     /// <param name="password">Password hash.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task Create(string username, byte[] salt, byte[] password);
+    Task CreateAsync(string username, byte[] salt, byte[] password);
 
     /// <summary>
     /// Fetch a particular account.
     /// </summary>
     /// <param name="username">Username.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task<AccountRecord?> Fetch(string username);
+    Task<AccountRecord?> FetchAsync(string username);
 }
 
 #pragma warning disable SA1313 // Parameter names should begin with lower-case letter
