@@ -22,7 +22,7 @@ public class NpgsqlAccountRepository : IAccountRepository
     }
 
     /// <inheritdoc/>
-    public async Task Create(string username, byte[] salt, byte[] password)
+    public async Task CreateAsync(string username, byte[] salt, byte[] password)
     {
         await using var conn = new NpgsqlConnection(this.connString);
         await conn.OpenAsync();
@@ -37,7 +37,7 @@ public class NpgsqlAccountRepository : IAccountRepository
     }
 
     /// <inheritdoc/>
-    public async Task<AccountRecord?> Fetch(string username)
+    public async Task<AccountRecord?> FetchAsync(string username)
     {
         await using var conn = new NpgsqlConnection(this.connString);
         await conn.OpenAsync();

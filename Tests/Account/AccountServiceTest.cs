@@ -17,16 +17,16 @@ public class AccountServiceTest
     }
 
     [TestMethod]
-    public void Create()
+    public async Task CreateAsync()
     {
         // Given
         this.repository.
-            Setup(x => x.Create("hello", It.Is<byte[]>(s => s.Length == 16), It.Is<byte[]>(p => p.Length == 32))).
+            Setup(x => x.CreateAsync("hello", It.Is<byte[]>(s => s.Length == 16), It.Is<byte[]>(p => p.Length == 32))).
             Returns(Task.CompletedTask).
             Verifiable();
 
         // When
-        this.service.Create("hello", "world");
+        await this.service.CreateAsync("hello", "world");
 
         // Then
         this.repository.Verify();
