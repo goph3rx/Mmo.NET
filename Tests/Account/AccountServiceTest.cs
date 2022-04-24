@@ -31,4 +31,70 @@ public class AccountServiceTest
         // Then
         this.repository.Verify();
     }
+
+    [TestMethod]
+    public async Task FindAsyncNotFound()
+    {
+        // Given
+        this.repository.
+            Setup(x => x.FetchAsync("hello")).
+            ReturnsAsync((AccountRecord?)null).
+            Verifiable();
+
+        // When
+        var account = await this.service.FindAsync("hello", "world");
+
+        // Then
+        Assert.IsNull(account);
+        this.repository.Verify();
+    }
+
+    [TestMethod]
+    public async Task FindAsyncInvalidPassword()
+    {
+        // Given
+        this.repository.
+            Setup(x => x.FetchAsync("hello")).
+            ReturnsAsync(new AccountRecord(
+                Username: "hello",
+                Salt: Convert.FromHexString("BBF96DF3C7C50C46C08BF23418F7364B"),
+                Password: Convert.FromHexString("CA132F6A4A1636DD3A55504B9799FCDB997C36408DBA84F7581D99471EDFBAEC"),
+                LastWorld: 0,
+                IsBanned: false
+            )).
+            Verifiable();
+
+        // When
+        var account = await this.service.FindAsync("hello", "world2");
+
+        // Then
+        Assert.IsNull(account);
+        this.repository.Verify();
+    }
+
+    [TestMethod]
+    public async Task FindAsync()
+    {
+        // Given
+        this.repository.
+            Setup(x => x.FetchAsync("hello")).
+            ReturnsAsync(new AccountRecord(
+                Username: "hello",
+                Salt: Convert.FromHexString("BBF96DF3C7C50C46C08BF23418F7364B"),
+                Password: Convert.FromHexString("CA132F6A4A1636DD3A55504B9799FCDB997C36408DBA84F7581D99471EDFBAEC"),
+                LastWorld: 1,
+                IsBanned: true
+            )).
+            Verifiable();
+
+        // When
+        var account = await this.service.FindAsync("hello", "world");
+
+        // Then
+        Assert.IsNotNull(account);
+        Assert.AreEqual("hello", account.Username);
+        Assert.AreEqual(1, account.LastWorld);
+        Assert.AreEqual(true, account.IsBanned);
+        this.repository.Verify();
+    }
 }

@@ -32,8 +32,6 @@ public interface IAccountRepository
 /// <param name="Password">Password hash.</param>
 /// <param name="LastWorld">Last world that the account used (or zero).</param>
 /// <param name="IsBanned">Whether the account is banned.</param>
-public record AccountRecord(string Username, byte[] Salt, byte[] Password, short LastWorld, bool IsBanned)
-{
-}
+public record AccountRecord(string Username, byte[] Salt, byte[] Password, short LastWorld, bool IsBanned) { }
 
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
