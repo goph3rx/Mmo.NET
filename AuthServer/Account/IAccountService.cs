@@ -30,6 +30,6 @@ public interface IAccountService
 /// <param name="Username">Username.</param>
 /// <param name="LastWorld">Last world that the account used (or zero).</param>
 /// <param name="IsBanned">Whether the account is banned.</param>
-public record AccountData(string Username, short LastWorld, bool IsBanned) { }
+public record AccountData(string Username, byte LastWorld, bool IsBanned) { }
 
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
