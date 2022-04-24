@@ -1,5 +1,4 @@
-﻿using Dapper;
-using Npgsql;
+﻿using Npgsql;
 
 namespace Mmo.AuthServer.Account;
 
@@ -18,7 +17,7 @@ public class NpgsqlAccountRepository : IAccountRepository
     {
         this.connString = configuration.GetValue(
             "AuthServer:AccountRepository",
-            "Host=127.0.0.1;Username=accounts;Password=changeme;Database=accounts");
+            "Host=127.0.0.1;Username=accounts;Password=changeme;Database=accounts;Minimum Pool Size=5");
     }
 
     /// <inheritdoc/>
@@ -26,14 +25,14 @@ public class NpgsqlAccountRepository : IAccountRepository
     {
         await using var conn = new NpgsqlConnection(this.connString);
         await conn.OpenAsync();
-        await conn.ExecuteAsync(
-            "INSERT INTO accounts (username, salt, password) VALUES (@username, @salt, @password)",
-            new
-            {
-                username,
-                salt = Convert.ToHexString(salt),
-                password = Convert.ToHexString(password),
-            });
+
+        await using var cmd = new NpgsqlCommand("INSERT INTO accounts (username, salt, password) VALUES (@username, @salt, @password)", conn);
+        cmd.Parameters.AddWithValue("username", username);
+        cmd.Parameters.AddWithValue("salt", Convert.ToHexString(salt));
+        cmd.Parameters.AddWithValue("password", Convert.ToHexString(password));
+        cmd.Prepare();
+
+        await cmd.ExecuteNonQueryAsync();
     }
 
     /// <inheritdoc/>
@@ -41,19 +40,18 @@ public class NpgsqlAccountRepository : IAccountRepository
     {
         await using var conn = new NpgsqlConnection(this.connString);
         await conn.OpenAsync();
-        var record = await conn.QueryFirstOrDefaultAsync(
-            "SELECT salt, password, last_world, is_banned FROM accounts WHERE username = @username LIMIT 1",
-            new { username });
-        if (record == null)
-        {
-            return null;
-        }
 
+        await using var cmd = new NpgsqlCommand("SELECT salt, password, last_world, is_banned FROM accounts WHERE username = @username LIMIT 1", conn);
+        cmd.Parameters.AddWithValue("username", username);
+        cmd.Prepare();
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        await reader.ReadAsync();
         return new AccountRecord(
             Username: username,
-            Salt: Convert.FromHexString(record.salt),
-            Password: Convert.FromHexString(record.password),
-            LastWorld: (byte)record.last_world,
-            IsBanned: record.is_banned);
+            Salt: Convert.FromHexString(reader.GetString(0)),
+            Password: Convert.FromHexString(reader.GetString(1)),
+            LastWorld: reader.GetByte(2),
+            IsBanned: reader.GetBoolean(3));
     }
 }
