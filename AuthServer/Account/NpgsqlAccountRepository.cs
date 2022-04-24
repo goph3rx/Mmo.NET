@@ -46,6 +46,11 @@ public class NpgsqlAccountRepository : IAccountRepository
         cmd.Prepare();
 
         await using var reader = await cmd.ExecuteReaderAsync();
+        if (!reader.HasRows)
+        {
+            return null;
+        }
+
         await reader.ReadAsync();
         return new AccountRecord(
             Username: username,
