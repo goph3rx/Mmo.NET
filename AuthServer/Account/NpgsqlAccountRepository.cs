@@ -53,7 +53,7 @@ public class NpgsqlAccountRepository : IAccountRepository
             Username: username,
             Salt: Convert.FromHexString(record.salt),
             Password: Convert.FromHexString(record.password),
-            LastWorld: record.last_world,
+            LastWorld: (byte)record.last_world,
             IsBanned: record.is_banned);
     }
 }
